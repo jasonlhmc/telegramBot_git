@@ -15,8 +15,7 @@ A simple python program for retrieving notes stored in MongoDB
 > <pre>from pypi import dnspython</pre>
 4. Check out the [Telegram Bot Official Page](https://core.telegram.org/bots/) for more info about Telegram Bot  
 
-## More
-Data structure(json format): 
+## Data structure(json format):  
 <pre>
 {
     "_id": {
@@ -48,4 +47,10 @@ Data structure(json format):
         "$date": "2021-11-01T19:19:20.304Z"
     }
 }
-</pre>
+</pre>  
+
+## More  
+Can also my native java android application repository [HERE](https://github.com/jasonlhmc/AndroidNativeJavaApp). Including functions below:  
+> ．Check Currency  
+> ．QR Code Scanner <- submenu [Generate QR Code, Read QR Code from image]  
+> ．Jot Notes  
