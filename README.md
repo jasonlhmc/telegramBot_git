@@ -96,7 +96,8 @@
 > Check the code in the repsitory to get more information
 
 ## More  
-#### Can also my native java android application repository [HERE](https://github.com/jasonlhmc/AndroidNativeJavaApp). Including functions below:  
+#### Can also check out my native java android application repository [HERE](https://github.com/jasonlhmc/AndroidNativeJavaApp).  
+Including functions below:  
 > ．Check Currency  
 > ．QR Code Scanner <- submenu [Generate QR Code, Read QR Code from image]  
 > ．Jot Notes  
