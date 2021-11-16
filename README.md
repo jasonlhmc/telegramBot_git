@@ -102,7 +102,7 @@ Including functions below:
 > ．QR Code Scanner <- submenu [Generate QR Code, Read QR Code from image]  
 > ．Jot Notes  
 
-## Extras:
+## Extra
 /setcommands in @BotFather in Telegram
 > ![step.1](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_1.png?raw=true)  
 > Select you bot in the ReplyKeyboard at the bottom, then
