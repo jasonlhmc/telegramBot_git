@@ -24,12 +24,15 @@ import pymongo as pymongo
 # from pypi import dnspython
 from bson.json_util import dumps, loads
 
+from subprocess import Popen
+
 
 client = pymongo.MongoClient('')    #<--'mongodb+srv://.......'url
 db = client.test
 mydb = client['']   #<--collection name
 mycol = mydb['']    #<--database name
 
+LIBRE_OFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
 
 TOKEN = ''  #<--Telegram bot token
 updater = Updater(token=TOKEN, use_context=True)
@@ -264,6 +267,29 @@ def call_back_handle(update: Update, context: CallbackContext):
 dispatcher.add_handler(CallbackQueryHandler(call_back_handle))
 
 
+def docx_pdf_convert(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+
+    file_name = update.message.document.file_name
+    docx = context.bot.get_file(update.message.document).download(file_name)
+
+    if docx.endswith('.docx'):
+        process_time = time.time()
+        context.bot.sendMessage(chat_id, 'Its docx; ' + file_name)
+        context.bot.sendMessage(chat_id, 'Start converting docx to pdf..')
+        converted_file = file_name.replace('.docx', '.pdf')
+        convert_to_pdf(file_name, '')
+        if os.path.isfile(converted_file):
+            context.bot.send_document(chat_id, open(converted_file, 'rb'))
+            context.bot.sendMessage(update.effective_chat.id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+    else:
+        context.bot.sendMessage(chat_id, 'Not docx; ' + file_name)
+
+
+dp = updater.dispatcher
+dp.add_handler(MessageHandler(Filters.document, docx_pdf_convert))
+
+
 def unknown(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Invalid command.')
 
@@ -276,6 +302,13 @@ def decode_str_to_image(img_data):
     image.write(base64.b64decode(img_data))
     image.close()
     return image
+
+
+def convert_to_pdf(input_docx, out_folder):
+    p = Popen([LIBRE_OFFICE, '--headless', '--convert-to', 'pdf', '--outdir',
+               out_folder, input_docx])
+    print([LIBRE_OFFICE, '--convert-to', 'pdf', input_docx])
+    p.communicate()
 
 
 updater.start_polling()
