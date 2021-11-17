@@ -1,7 +1,8 @@
 # Telegram Bot  
 
 #### A simple python program for retrieving notes stored in MongoDB  
-> ．enter /notes_all in Telegram for all notes  
+> ．Full code in [telegramBot.py](https://github.com/jasonlhmc/telegramBot_git/blob/main/telegramBot.py)  
+> ．Enter /notes_all in Telegram for all notes  
 > ．InlineKeyboardMarkup will list all notes that found in MongoDB  
 > ．Press the note Title list above will show the Note details(date, content etc.)  
 > ．Added new functions below:
@@ -61,7 +62,7 @@
 > ![Example](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/check_cur_1.png?raw=true)  
 > Using Free API: https://tw.rter.info/capi.php  
 
-#### ．A simple downloader for download video on specific site
+#### ．A downloader for download video on specific site
 <pre>/dl </pre>
 > Following with an url argument 
 > <pre>e.g. /dl https://XxxxXX.xxx/video/xxx.html</pre>  
@@ -93,7 +94,13 @@
 > .
 > .
 > </pre>  
-> Check the code in the repsitory to get more information
+> Check the code in the repsitory to get more information  
+
+#### ．docx convert to pdf file  
+> INFO: [LibreOffice](https://www.libreoffice.org/discover/libreoffice/)(Freeware) should be installed  
+> Auto convert to pdf if the uploaded file extention is .docx  
+> ![Example](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/docx-pdf_convertor.png?raw=true)  
+> Check the code for more information
 
 ## More  
 #### Can also check out my native java android application repository [HERE](https://github.com/jasonlhmc/AndroidNativeJavaApp).  
