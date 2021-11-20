@@ -103,8 +103,9 @@ log = driver.get_log("performance")
 - Check the code for more information  
 
 ### 4. get text from image
-- Using [tesseract](https://github.com/UB-Mannheim/tesseract/wiki)  
+- Using [tesseract](https://github.com/UB-Mannheim/tesseract/wiki) | [doc](https://tesseract-ocr.github.io/tessdoc/) | [tessdata](https://github.com/tesseract-ocr/tessdata)  
   - Install tesseract with the installer with the link provided  
+  - Download extra languages support from [tessdata](https://github.com/tesseract-ocr/tessdata)
 - Auto detect the text from the image uploaded  
   - Image file should upload in photo selection(moblie)/quick upload(desktop)
 
