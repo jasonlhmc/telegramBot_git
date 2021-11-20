@@ -26,6 +26,7 @@ from bson.json_util import dumps, loads
 
 from subprocess import Popen
 
+import pytesseract
 
 client = pymongo.MongoClient('')    #<--'mongodb+srv://.......'url
 db = client.test
@@ -33,6 +34,7 @@ mydb = client['']   #<--collection name
 mycol = mydb['']    #<--database name
 
 LIBRE_OFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
 TOKEN = ''  #<--Telegram bot token
 updater = Updater(token=TOKEN, use_context=True)
@@ -222,6 +224,45 @@ def dl(update, context: CallbackContext):
 dispatcher.add_handler(CommandHandler('dl', dl, pass_args=True))
 
 
+def docx_pdf_convert(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+
+    file_name = update.message.document.file_name
+    docx = context.bot.get_file(update.message.document).download(file_name)
+
+    if docx.endswith('.docx'):
+        process_time = time.time()
+        context.bot.sendMessage(chat_id, 'Its docx; ' + file_name)
+        context.bot.sendMessage(chat_id, 'Start converting docx to pdf..')
+        converted_file = file_name.replace('.docx', '.pdf')
+        convert_to_pdf(file_name, '')
+        if os.path.isfile(converted_file):
+            context.bot.send_document(chat_id, open(converted_file, 'rb'))
+            context.bot.sendMessage(chat_id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+    else:
+        context.bot.sendMessage(chat_id, 'Not docx; ' + file_name)
+
+
+dp = updater.dispatcher
+dp.add_handler(MessageHandler(Filters.document, docx_pdf_convert))
+
+
+def get_text_from_image(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+
+    process_time = time.time()
+    image = context.bot.get_file(update.message.photo[-1].file_id).download()
+
+    context.bot.sendMessage(chat_id, 'Start getting text from image..')
+    rs = pytesseract.image_to_string(image)
+    context.bot.sendMessage(chat_id, rs)
+    context.bot.sendMessage(chat_id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+
+
+dp = updater.dispatcher
+dp.add_handler(MessageHandler(Filters.photo, get_text_from_image))
+
+
 def call_back_handle(update: Update, context: CallbackContext):
     # print(update.callback_query.data)
     call_back_type, call_back_data = update.callback_query.data.split('|')
@@ -265,29 +306,6 @@ def call_back_handle(update: Update, context: CallbackContext):
 
 
 dispatcher.add_handler(CallbackQueryHandler(call_back_handle))
-
-
-def docx_pdf_convert(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
-
-    file_name = update.message.document.file_name
-    docx = context.bot.get_file(update.message.document).download(file_name)
-
-    if docx.endswith('.docx'):
-        process_time = time.time()
-        context.bot.sendMessage(chat_id, 'Its docx; ' + file_name)
-        context.bot.sendMessage(chat_id, 'Start converting docx to pdf..')
-        converted_file = file_name.replace('.docx', '.pdf')
-        convert_to_pdf(file_name, '')
-        if os.path.isfile(converted_file):
-            context.bot.send_document(chat_id, open(converted_file, 'rb'))
-            context.bot.sendMessage(update.effective_chat.id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
-    else:
-        context.bot.sendMessage(chat_id, 'Not docx; ' + file_name)
-
-
-dp = updater.dispatcher
-dp.add_handler(MessageHandler(Filters.document, docx_pdf_convert))
 
 
 def unknown(update, context):
