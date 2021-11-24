@@ -102,6 +102,16 @@ log = driver.get_log("performance")
 ![Example](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/docx-pdf_convertor.png?raw=true)  
 - Check the code for more information  
 
+### 4. get text from image
+- Using [tesseract](https://github.com/UB-Mannheim/tesseract/wiki) | [doc](https://tesseract-ocr.github.io/tessdoc/) | [tessdata](https://github.com/tesseract-ocr/tessdata)  
+  - Install tesseract with the installer with the link provided  
+  - Download extra languages support from [tessdata](https://github.com/tesseract-ocr/tessdata)
+- Auto detect the text from the image uploaded  
+  - Image file should upload in photo selection(moblie)/quick upload(desktop)
+
+![Example](https://raw.githubusercontent.com/jasonlhmc/telegramBot_git/main/img/get_text_from_image.png)  
+- Check the code for more information  
+
 ## More  
 ### Can also check out my native java android application repository [HERE](https://github.com/jasonlhmc/AndroidNativeJavaApp).  
 Including functions below:  
@@ -110,9 +120,9 @@ Including functions below:
 > ．Jot Notes  
 
 ## Extra
-/setcommands in @BotFather in Telegram
-> ![step.1](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_1.png?raw=true)  
-> Select you bot in the ReplyKeyboard at the bottom, then
-> ![step.2](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_2.png?raw=true)  
-> Result:  
-> ![step.3](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_3.png?raw=true)  
+### /setcommands in @BotFather in Telegram
+![step.1](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_1.png?raw=true)  
+Select your bot in the ReplyKeyboard at the bottom, then
+![step.2](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_2.png?raw=true)  
+Result:  
+![step.3](https://github.com/jasonlhmc/telegramBot_git/blob/main/img/others-setcommands_3.png?raw=true)  
