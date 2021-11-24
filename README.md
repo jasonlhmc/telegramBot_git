@@ -110,6 +110,11 @@ log = driver.get_log("performance")
   - Image file should upload in photo selection(moblie)/quick upload(desktop)
 
 ![Example](https://raw.githubusercontent.com/jasonlhmc/telegramBot_git/main/img/get_text_from_image.png)  
+
+- Human body detection  
+  - select "rcnn" option in the inline keyboard for this process  
+
+![Example](https://raw.githubusercontent.com/jasonlhmc/telegramBot_git/main/img/human_detection.png)
 - Check the code for more information  
 
 ## More  
