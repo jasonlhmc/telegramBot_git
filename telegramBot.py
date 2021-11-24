@@ -25,8 +25,25 @@ import pymongo as pymongo
 from bson.json_util import dumps, loads
 
 from subprocess import Popen
+import glob
 
+import cv2
 import pytesseract
+
+import torch
+import torchvision
+import numpy as np
+import argparse
+from PIL import Image
+from torchvision.transforms import transforms as transforms
+
+import matplotlib
+
+edges = [
+    (0, 1), (0, 2), (2, 4), (1, 3), (6, 8), (8, 10),
+    (5, 7), (7, 9), (5, 11), (11, 13), (13, 15), (6, 12),
+    (12, 14), (14, 16), (5, 6)
+]
 
 client = pymongo.MongoClient('')    #<--'mongodb+srv://.......'url
 db = client.test
@@ -166,7 +183,6 @@ def dl(update, context: CallbackContext):
         process_time = time.time()
         log = driver.get_log("performance")
         video_url_list = re.findall(
-            # "(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
             '"https://.*?"'
             , str(log))
         driver.close()
@@ -250,21 +266,73 @@ dp.add_handler(MessageHandler(Filters.document, docx_pdf_convert))
 def get_text_from_image(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
 
-    process_time = time.time()
-    image = context.bot.get_file(update.message.photo[-1].file_id).download()
+    image_in = context.bot.get_file(update.message.photo[-1].file_id).download('image_in.png')
+    caption = update.message.caption
 
-    context.bot.sendMessage(chat_id, 'Start getting text from image..')
-    rs = pytesseract.image_to_string(image)
-    context.bot.sendMessage(chat_id, rs)
-    context.bot.sendMessage(chat_id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+    image_cv2 = cv2.imread(image_in)
+    image_cv2 = cv2.resize(image_cv2, None, fx=2, fy=2)
+    image_cv2 = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2GRAY)
+    image_cv2 = cv2.threshold(image_cv2, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    cv2.imwrite('cv2_image.png', image_cv2)
+
+    if caption in pytesseract.get_languages(config='') or caption == 'all':
+        print('Lang arg found.')
+        process_time = time.time()
+        context.bot.sendMessage(chat_id, 'Start getting text from image..')
+        if caption == 'all':
+            lang_all = ''
+            i = 0
+            for tesseract_lang in pytesseract.get_languages(config=''):
+                i += 1
+                if i == pytesseract.get_languages(config='').__len__():
+                    lang_all += tesseract_lang
+                else:
+                    lang_all += tesseract_lang + '+'
+            rs = pytesseract.image_to_string('cv2_image.png', lang=lang_all, config='--psm 6')
+        else:
+            rs = pytesseract.image_to_string('cv2_image.png', lang=caption, config='--psm 6')
+        context.bot.sendMessage(chat_id, rs)
+        context.bot.sendMessage(chat_id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+    else:
+        print('No lang arg found.')
+        button_list = []
+        for tesseract_lang in pytesseract.get_languages(config=''):
+            button_list.append([InlineKeyboardButton(text=tesseract_lang, callback_data='image_text' + '|' + tesseract_lang)])
+        button_list.append([InlineKeyboardButton(text='all', callback_data='image_text' + '|' + 'all')])
+        button_list.append([InlineKeyboardButton(text='rcnn', callback_data='rcnn' + '|' + image_in)])
+        reply_keyboard = InlineKeyboardMarkup(button_list)
+        update.message.reply_text('Select Language: ', reply_markup=reply_keyboard)
 
 
 dp = updater.dispatcher
 dp.add_handler(MessageHandler(Filters.photo, get_text_from_image))
 
 
+def delete_file(update, context: CallbackContext):
+    file_list = []
+    long_file_name = ""
+    print("len(context.args) = " + str(len(context.args)))
+    if len(context.args) == 0:
+        for file_name in glob.glob(os.getcwd() + "/*"):
+            if not file_name.endswith(".py") and os.path.isfile(file_name):
+                fn = file_name.replace(os.getcwd(), "")
+                if len(fn.encode('utf-8')) > (64 - len('delete_file' + '|')):
+                    long_file_name += fn + "\r\n"
+                else:
+                    file_list.append([InlineKeyboardButton(text=fn, callback_data='delete_file' + '|' + fn)])
+        file_list.append([InlineKeyboardButton(text='❌EXIT❌', callback_data='delete_file' + '|' + 'exit')])
+        reply_keyboard = InlineKeyboardMarkup(file_list)
+        update.message.reply_text('Select file to remove: ', reply_markup=reply_keyboard)
+        if long_file_name != "":
+            context.bot.sendMessage(update.effective_chat.id, "Files cannot delete: \r\n" + long_file_name)
+    else:
+        context.bot.sendMessage(update.effective_chat.id, "No arg needed.")
+
+
+dispatcher.add_handler(CommandHandler('delete_file', delete_file))
+
+
 def call_back_handle(update: Update, context: CallbackContext):
-    # print(update.callback_query.data)
     call_back_type, call_back_data = update.callback_query.data.split('|')
     if call_back_type == 'note':
         rs = ''
@@ -280,7 +348,7 @@ def call_back_handle(update: Update, context: CallbackContext):
             rs += '--------------------------------------------------' + '\r\n'
             update.callback_query.edit_message_text(rs)
             decode_str_to_image(json.loads(json_data)['content'])
-            context.bot.send_photo(update.effective_chat.id, open('image.png', 'rb'))
+            context.bot.send_photo(update.effective_chat.id, open('note_paint.png', 'rb'))
         else:
             rs += '--------------------------------------------------' + '\r\n'
             rs += json.loads(json_data)['content'] + '\r\n'
@@ -304,6 +372,73 @@ def call_back_handle(update: Update, context: CallbackContext):
         update.callback_query.edit_message_text('Note Updated. Result below: ')
         context.bot.send_message(update.effective_chat.id, json.dumps(updated_date, indent=2))
 
+    if call_back_type == 'image_text':
+        process_time = time.time()
+        arg = call_back_data
+        if arg == 'all':
+            lang_all = ''
+            i = 0
+            for tesseract_lang in pytesseract.get_languages(config=''):
+                i += 1
+                if i == pytesseract.get_languages(config='').__len__():
+                    lang_all += tesseract_lang
+                else:
+                    lang_all += tesseract_lang + '+'
+            update.callback_query.edit_message_text(lang_all)
+            context.bot.sendMessage(update.effective_chat.id, 'Start getting text from image..')
+            rs = pytesseract.image_to_string('cv2_image.png', lang=lang_all, config='--psm 6')
+        else:
+            update.callback_query.edit_message_text(arg)
+            context.bot.sendMessage(update.effective_chat.id, 'Start getting text from image..')
+            rs = pytesseract.image_to_string('cv2_image.png', lang=arg, config='--psm 6')
+        context.bot.sendMessage(update.effective_chat.id, rs)
+        context.bot.sendMessage(update.effective_chat.id, 'Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+
+    if call_back_type == 'rcnn':
+        process_time = time.time()
+        arg = call_back_data
+
+        transform = transforms.Compose([transforms.ToTensor()])
+        model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True, num_keypoints=17)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device).eval()
+        image = Image.open(call_back_data).convert('RGB')
+        orig_numpy = np.array(image, dtype=np.float32)
+        orig_numpy = cv2.cvtColor(orig_numpy, cv2.COLOR_RGB2BGR) / 255.
+        image = transform(image)
+        image = image.unsqueeze(0).to(device)
+        with torch.no_grad():
+            outputs = model(image)
+        output_image = draw_points(outputs, orig_numpy)
+        cv2.waitKey(0)
+        cv2.imwrite("image_out_rcnn.png", output_image * 255.)
+
+        context.bot.send_photo(update.effective_chat.id, open("image_out_rcnn.png", 'rb'))
+        update.callback_query.edit_message_text('Done in ' + str((time.time() - process_time).__int__()) + ' second(s).')
+
+    if call_back_type == 'delete_file':
+        if call_back_data == "exit":
+            update.callback_query.edit_message_text("EXIT delete file process.")
+        else:
+            if os.path.exists(os.getcwd() + call_back_data):
+                os.remove(os.getcwd() + call_back_data)
+                file_list = []
+                long_file_name = ""
+                for file_name in glob.glob(os.getcwd() + "/*"):
+                    if not file_name.endswith(".py") and os.path.isfile(file_name):
+                        fn = file_name.replace(os.getcwd(), "")
+                        if len(fn.encode('utf-8')) > (64 - len('delete_file' + '|')):
+                            long_file_name += fn + "\r\n"
+                        else:
+                            file_list.append([InlineKeyboardButton(text=fn, callback_data='delete_file' + '|' + fn)])
+                file_list.append([InlineKeyboardButton(text='❌EXIT❌', callback_data='delete_file' + '|' + 'exit')])
+                reply_keyboard = InlineKeyboardMarkup(file_list)
+                update.callback_query.edit_message_reply_markup(reply_markup=reply_keyboard)
+                if long_file_name != "":
+                    context.bot.sendMessage(update.effective_chat.id, "Files cannot delete: \r\n" + long_file_name)
+            else:
+                context.bot.sendMessage(update.effective_chat.id, "File Not Found.")
+
 
 dispatcher.add_handler(CallbackQueryHandler(call_back_handle))
 
@@ -316,7 +451,7 @@ dispatcher.add_handler(MessageHandler(Filters.command, unknown))
 
 
 def decode_str_to_image(img_data):
-    image = open("image.png", "wb")
+    image = open("note_paint.png", "wb")
     image.write(base64.b64decode(img_data))
     image.close()
     return image
@@ -327,6 +462,35 @@ def convert_to_pdf(input_docx, out_folder):
                out_folder, input_docx])
     print([LIBRE_OFFICE, '--convert-to', 'pdf', input_docx])
     p.communicate()
+
+
+def draw_points(outputs, image):
+    # the `outputs` is list which in-turn contains the dictionaries
+    for i in range(len(outputs[0]['keypoints'])):
+        points = outputs[0]['keypoints'][i].cpu().detach().numpy()
+        # proceed to draw the lines if the confidence score is above 0.9
+        if outputs[0]['scores'][i] > 0.9:
+            points = points[:, :].reshape(-1, 3)
+            for p in range(points.shape[0]):
+                # draw the keypoints
+                cv2.circle(image, (int(points[p, 0]), int(points[p, 1])),
+                           3, (0, 0, 255), thickness=-1, lineType=cv2.FILLED)
+                # uncomment the following lines if you want to put keypoint number
+                # cv2.putText(image, f"{p}", (int(keypoints[p, 0]+10), int(keypoints[p, 1]-5)),
+                #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+            for ie, e in enumerate(edges):
+                # get different colors for the edges
+                rgb = matplotlib.colors.hsv_to_rgb([
+                    ie / float(len(edges)), 1.0, 1.0
+                ])
+                rgb = rgb * 255
+                # join the keypoint pairs to draw the skeletal structure
+                cv2.line(image, (int(points[e, 0][0]), int(points[e, 1][0])),
+                         (int(points[e, 0][1]), int(points[e, 1][1])),
+                         tuple(rgb), 2, lineType=cv2.LINE_AA)
+        else:
+            continue
+    return image
 
 
 updater.start_polling()
